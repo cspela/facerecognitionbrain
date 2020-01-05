@@ -4,6 +4,7 @@ import Rank from '../components/Rank/Rank';
 import ImageLinkForm from '../components/ImageLinkForm/ImageLinkForm';
 import FaceRecognition from '../components/FaceRecognition/FaceRecognition';
 import Signin from '../components/Signin/Signin';
+import Register from '../components/Register/Register';
 import Particles from 'react-particles-js';
 import Clarifai from 'clarifai';
 import 'tachyons'; 
@@ -22,7 +23,7 @@ const particleOptions = {
 }
 
 const app = new Clarifai.App({
- apiKey: ''
+ apiKey: '01131eb18c31484aaf6f23880c675c1a'
 });
 
 class App extends Component{
@@ -40,6 +41,7 @@ class App extends Component{
 	}
 
 	onInputChange = (event) => {
+		event.preventDefault();
 		this.setState({input: event.target.value}); 
 	}
 
@@ -77,8 +79,6 @@ class App extends Component{
 				return boxes.push(faceBox);
 			});
 			return boxes; 
-		}else{
-			return "There is no faces";
 		}
 	}
 
@@ -90,14 +90,15 @@ class App extends Component{
 
 	render(){		
 		console.log(this.state); 
+		const { imgUrl, boxes } = this.state; 
 		return (
 			<Fragment>
             	<Particles params={particleOptions} className='particles'/>
 				<Navigation />
 				<Rank name={'Špela'} rank={6}/>
 				<ImageLinkForm onButtonSubmit={this.onButtonSubmit} onInputChange={this.onInputChange} />
-				{ (this.state.imgUrl.length !== Number(0)) ? 
-					(<FaceRecognition imgUrl={this.state.imgUrl} boxes={this.state.boxes}/>) : (console.log('No image'))
+				{ (imgUrl.length !== Number(0)) ? 
+					(<FaceRecognition imgUrl={imgUrl} boxes={boxes}/>) : (console.log('No image'))
 				}
 			</Fragment>
 		)
