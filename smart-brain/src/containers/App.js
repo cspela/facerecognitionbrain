@@ -1,4 +1,5 @@
 import React, { Component, Fragment } from 'react';
+// import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import Navigation from '../components/Navigation/Navigation';
 import Rank from '../components/Rank/Rank';
 import ImageLinkForm from '../components/ImageLinkForm/ImageLinkForm';
@@ -26,18 +27,31 @@ const app = new Clarifai.App({
  apiKey: '01131eb18c31484aaf6f23880c675c1a'
 });
 
+let initialState = {
+	input: '', 
+	imgUrl: '',
+	boxes: [],
+	route: 'signin',
+	isSignedIn: false
+}
+
 class App extends Component{
 	constructor(){
 		super();
-		this.state = {
-			input : '', 
-			imgUrl: '',
-			boxes: []
-		}
+		this.state = initialState; 
 	}
 
 	componentDidMount(){
 		//console.log('componentDidMount');
+	}
+
+	onRouteChange = (route) => {
+		if(route === 'signout'){
+			this.setState({isSignedIn: false})
+		}else if(route === 'home'){
+			this.setState({isSignedIn: true})
+		}
+		this.setState({route: route}); 
 	}
 
 	onInputChange = (event) => {
@@ -90,15 +104,25 @@ class App extends Component{
 
 	render(){		
 		console.log(this.state); 
-		const { imgUrl, boxes } = this.state; 
+		const { imgUrl, boxes, route, isSignedIn } = this.state; 
 		return (
 			<Fragment>
             	<Particles params={particleOptions} className='particles'/>
-				<Navigation />
-				<Rank name={'Špela'} rank={6}/>
-				<ImageLinkForm onButtonSubmit={this.onButtonSubmit} onInputChange={this.onInputChange} />
-				{ (imgUrl.length !== Number(0)) ? 
-					(<FaceRecognition imgUrl={imgUrl} boxes={boxes}/>) : (console.log('No image'))
+				<Navigation onRouteChange={this.onRouteChange} isSignedIn={isSignedIn}/>
+				{
+					(route === 'home') ? 
+						(
+							<Fragment>
+								<Rank name={'Špela'} rank={6}/>
+								<ImageLinkForm onButtonSubmit={this.onButtonSubmit} onInputChange={this.onInputChange} />
+								{ (imgUrl.length !== Number(0)) ? 
+									(<FaceRecognition imgUrl={imgUrl} boxes={boxes}/>) : (console.log('No image'))
+								}
+							</Fragment>
+						) : (
+							(route === 'signin') ? 
+							(<Signin onRouteChange={this.onRouteChange}/>) : (<Register onRouteChange={this.onRouteChange}/>) 
+						)
 				}
 			</Fragment>
 		)
