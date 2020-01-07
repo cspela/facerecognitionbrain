@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express(); 
 
+const bcrypt = require('bcrypt-nodejs'); 
+
 const database = require('./database.js');
 const { users } = database; 
 
@@ -16,15 +18,16 @@ app.get('/users', (req,res) => {
 })
 
 app.get('/profile/:id', (req,res) => {	
-	for(user of users){
+	let found = 'false'; 
+	users.forEach(user => {
 		const { name, entries } = user; 
 		if(user.id === Number(req.params.id)){
-			user = {
-				name: name,
-				entries: entries
-			}
-			res.send(user); 
+			found = 'true'; 
+			return res.json(user); 
 		}
+	})
+	if(!found){
+		res.status(404).json('Not found'); 
 	}
 })
 
@@ -37,10 +40,10 @@ app.post('/register', (req,res) => {
 		}
 		return exists; 
 	})
-	console.log(exists); 
+	console.log(exists); 	
 	if(!exists){
 		const user = {
-			id: id,
+			id: Number(id),
 			name: name,
 			email: email,
 			password: password,
@@ -82,7 +85,6 @@ app.delete('/user/:id', (req,res) => {
 	res.send("User has been successfuly deleted."); 
 })
 
-//Updating user data (name, email, password)
 app.put('/userData/:id', (req,res) => {
 	const { name, email, password } = req.body;
 	const { id } = req.params; 
@@ -96,24 +98,32 @@ app.put('/userData/:id', (req,res) => {
 	res.send("User has been updated."); 
 })
 
-app.put('/entries/:userId', (req, res) => {
-	const { userId } = req.params; 
-	for(user of users){
-		if(user.id === Number(userId)){
-			user.entries += 1; 
-			res.send(user);
+app.put('/image', (req, res) => {
+	let found = 'false'; 
+	users.forEach(user => {
+		const { id } = req.body; 
+		if(user.id === Number(id)){
+			found = 'true'; 
+			user.entries++; 
+			return res.json(user.entries); 
 		}
+	})
+	if(!found){
+		res.status(400).json('User not found'); 
 	}
 })
+
+// app.put('/entries/:userId', (req, res) => {
+// 	const { userId } = req.params; 
+// 	for(user of users){
+// 		if(user.id === Number(userId)){
+// 			user.entries += 1; 
+// 			res.send(user);
+// 		}
+// 	}
+// })
 
 const port = 3003; 
 app.listen(port, () => {
 	console.log(`App is running on port ${port}`)
 }); 
-
-	// console.log(req.url);
-	// console.log(req.method);
-	// console.log(req.headers);
-	// console.log(req.params);
-	// console.log(req.query);
-	//console.log(req.body); --> post/put/delete
