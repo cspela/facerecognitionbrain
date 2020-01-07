@@ -70,7 +70,6 @@ app.post('/signin', (req,res) => {
 		}
 		return canSignin; 
 	})
-
 	if(!canSignin){
 		res.status(400).json('fail');
 	}
