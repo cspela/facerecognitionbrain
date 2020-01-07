@@ -9,21 +9,28 @@ const users = [
 		id: 1, 
 		name: 'Spela',
 		email: 'spela@gmail.com',
-		password: '123'	
+		password: '123',
+		rank: 1
 	},
 	{
 		id: 2,
 		name: 'Eva',
 		email: 'eva@gmail.com',
-		password: '1234'	
+		password: '1234',
+		rank: 2
 	},	
 	{
 		id: 3,
 		name: 'Meva',
 		email: 'meva@gmail.com',
-		password: '1234'	
+		password: '1234',
+		rank: 5	
 	}	
 ]
+
+app.get('/', (req,res) => {
+	res.send("This is working"); 
+})
 
 app.get('/users', (req,res) => {
 	res.send(users); 
@@ -43,25 +50,42 @@ app.get('/user/:id', (req,res) => {
 })
 
 app.post('/register', (req,res) => {
-	const user = {
-		id: req.body.id,
-		name: req.body.name,
-		email: req.body.email,
-		password: req.body.password,
+	let exists = false; 
+	users.map(user => {
+		if(user.email === req.body.email){
+			exists = true; 
+		}
+		return exists; 
+	})
+	console.log(exists); 
+	if(!exists){
+		const user = {
+			id: req.body.id,
+			name: req.body.name,
+			email: req.body.email,
+			password: req.body.password,
+		}
+		users.push(user);
+		res.send(user);
+	} else{
+		res.send("User already exists.");
 	}
-	users.push(user); 
-	res.send("User has been successfuly added."); 
+
 })
 
-app.post('/login', (req,res) => {
-	let canLogin = false; 
+app.post('/signin', (req,res) => {
+	let canSignin = false; 
 	users.map(user => {
 		if(user.email === req.body.email && user.password === req.body.password){
-			canLogin = true; 
+			canSignin = true; 
 		}
-		return canLogin; 
+		return canSignin; 
 	})
-	res.send(canLogin); 
+	if(canSignin){
+		res.send('Sccess'); 
+	}else{
+		res.send('Fail'); 
+	}
 })
 
 app.delete('/user/:id', (req,res) => {
@@ -85,9 +109,19 @@ app.put('/user/:id', (req,res) => {
 	res.send("User has been updated."); 
 })
 
+app.put('/rank/:userId', (req, res) => {
+	for(user of users){
+		if(user.id === Number(req.params.userId)){
+			user.rank += 1; 
+			res.send(user);
+		}
+	}
+})
 
-app.listen(3000); 
-
+const port = 3003; 
+app.listen(port, () => {
+	console.log(`App is running on port ${port}`)
+}); 
 
 	// console.log(req.url);
 	// console.log(req.method);
