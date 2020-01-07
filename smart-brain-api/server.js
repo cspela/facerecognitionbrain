@@ -1,48 +1,27 @@
 const express = require('express');
 const app = express(); 
 
-app.use(express.json());
-app.use(express.urlencoded({extended:false}));
+const database = require('./database.js');
+const { users } = database; 
 
-const users = [
-	{
-		id: 1, 
-		name: 'Spela',
-		email: 'spela@gmail.com',
-		password: '123',
-		rank: 1
-	},
-	{
-		id: 2,
-		name: 'Eva',
-		email: 'eva@gmail.com',
-		password: '1234',
-		rank: 2
-	},	
-	{
-		id: 3,
-		name: 'Meva',
-		email: 'meva@gmail.com',
-		password: '1234',
-		rank: 5	
-	}	
-]
+app.use(express.urlencoded({extended: false}));
+app.use(express.json());
 
 app.get('/', (req,res) => {
-	res.send("This is working"); 
+	res.send(users); 
 })
 
 app.get('/users', (req,res) => {
 	res.send(users); 
 })
 
-app.get('/user/:id', (req,res) => {	
+app.get('/profile/:id', (req,res) => {	
 	for(user of users){
+		const { name, entries } = user; 
 		if(user.id === Number(req.params.id)){
 			user = {
-				id: user.id,
-				name: user.name,
-				email: user.email
+				name: name,
+				entries: entries
 			}
 			res.send(user); 
 		}
@@ -51,8 +30,9 @@ app.get('/user/:id', (req,res) => {
 
 app.post('/register', (req,res) => {
 	let exists = false; 
+	const { id, name, email, password } = req.body; 
 	users.map(user => {
-		if(user.email === req.body.email){
+		if(user.email === email){
 			exists = true; 
 		}
 		return exists; 
@@ -60,10 +40,12 @@ app.post('/register', (req,res) => {
 	console.log(exists); 
 	if(!exists){
 		const user = {
-			id: req.body.id,
-			name: req.body.name,
-			email: req.body.email,
-			password: req.body.password,
+			id: id,
+			name: name,
+			email: email,
+			password: password,
+			entries: 0,
+			joined: new Date()
 		}
 		users.push(user);
 		res.send(user);
@@ -75,16 +57,18 @@ app.post('/register', (req,res) => {
 
 app.post('/signin', (req,res) => {
 	let canSignin = false; 
+	const { email, password } = req.body; 
 	users.map(user => {
-		if(user.email === req.body.email && user.password === req.body.password){
+		if(user.email === email && user.password === password){
 			canSignin = true; 
 		}
 		return canSignin; 
 	})
+
 	if(canSignin){
-		res.send('Sccess'); 
+		res.json('sccess'); 
 	}else{
-		res.send('Fail'); 
+		res.status(400).json('error logging in'); 
 	}
 })
 
@@ -98,21 +82,25 @@ app.delete('/user/:id', (req,res) => {
 	res.send("User has been successfuly deleted."); 
 })
 
-app.put('/user/:id', (req,res) => {
+//Updating user data (name, email, password)
+app.put('/userData/:id', (req,res) => {
+	const { name, email, password } = req.body;
+	const { id } = req.params; 
 	users.forEach((user, i) => {
-		if(user.id === Number(req.params.id)){
-			user.name = req.body.name; 
-			user.email = req.body.email; 
-			user.password = req.body.password; 
+		if(user.id === Number(id)){
+			user.name = name; 
+			user.email = email; 
+			user.password = password; 
 		}
 	})
 	res.send("User has been updated."); 
 })
 
-app.put('/rank/:userId', (req, res) => {
+app.put('/entries/:userId', (req, res) => {
+	const { userId } = req.params; 
 	for(user of users){
-		if(user.id === Number(req.params.userId)){
-			user.rank += 1; 
+		if(user.id === Number(userId)){
+			user.entries += 1; 
 			res.send(user);
 		}
 	}
