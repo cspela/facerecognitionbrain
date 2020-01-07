@@ -2,12 +2,14 @@ const express = require('express');
 const app = express(); 
 
 const bcrypt = require('bcrypt-nodejs'); 
+const cors = require('cors'); 
 
 const database = require('./database.js');
 const { users } = database; 
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
+app.use(cors()); 
 
 app.get('/', (req,res) => {
 	res.send(users); 
@@ -43,7 +45,7 @@ app.post('/register', (req,res) => {
 	console.log(exists); 	
 	if(!exists){
 		const user = {
-			id: Number(id),
+			id: Math.floor(Math.random() * 100),
 			name: name,
 			email: email,
 			password: password,
@@ -51,9 +53,9 @@ app.post('/register', (req,res) => {
 			joined: new Date()
 		}
 		users.push(user);
-		res.send(user);
+		res.json(user);
 	} else{
-		res.send("User already exists.");
+		res.json("exists");
 	}
 
 })
@@ -63,16 +65,21 @@ app.post('/signin', (req,res) => {
 	const { email, password } = req.body; 
 	users.map(user => {
 		if(user.email === email && user.password === password){
-			canSignin = true; 
+			canSignin = true;
+			return res.json(user); 
 		}
 		return canSignin; 
 	})
 
-	if(canSignin){
-		res.json('sccess'); 
-	}else{
-		res.status(400).json('error logging in'); 
+	if(!canSignin){
+		res.status(400).json('fail');
 	}
+
+	// if(!canSignin){
+	// 	res.json('success'); 
+	// }else{
+	// 	res.status(400).json('fail'); 
+	// }
 })
 
 app.delete('/user/:id', (req,res) => {

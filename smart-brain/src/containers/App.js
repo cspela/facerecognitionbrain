@@ -32,7 +32,14 @@ let initialState = {
 	imgUrl: '',
 	boxes: [],
 	route: 'signin',
-	isSignedIn: false
+	isSignedIn: false,
+	user: {
+		id: '', 
+		name: '',
+		email: '',
+		entries: 0,
+		joined: ''
+	}
 }
 
 class App extends Component{
@@ -41,8 +48,22 @@ class App extends Component{
 		this.state = initialState; 
 	}
 
-	componentDidMount(){
-		//console.log('componentDidMount');
+	// componentDidMount(){
+	// 	//console.log('componentDidMount');
+	// 	fetch('http://localhost:3003/users')
+	// 		.then(res => res.json())
+	// 		.then(data => console.log(data)); 
+	// }
+
+	loadUser = (user) => {
+		const { id, name, email, entries, joined} = user; 
+		this.setState({user: {
+			id: id, 
+			name: name,
+			email: email,
+			entries: entries,
+			joined: joined
+		}})
 	}
 
 	onRouteChange = (route) => {
@@ -59,14 +80,25 @@ class App extends Component{
 		this.setState({input: event.target.value}); 
 	}
 
-	onButtonSubmit = () => {
+	onPictureSubmit = () => {
 		this.setState({boxes: []})
-
 		const input = this.state.input; 
 		this.setState({ imgUrl:input }); 
 
 		app.models.predict("a403429f2ddf4b49b307e318f00e528b", input)
-			.then(response => this.displayFaceBox(this.calculateFaceLocation(response)))
+			.then(response => {
+				if(response){			
+					fetch('http://localhost:3003/image', {
+						method: 'put',
+						headers: {'Content-Type': 'application/json'},
+						body: JSON.stringify({ id: this.state.user.id })
+					}).then(res => res.json())
+						.then(count => {
+							this.setState(Object.assign(this.state.user, {entries: count}))
+						})
+				}
+				this.displayFaceBox(this.calculateFaceLocation(response))
+			})
 			.catch(err => console.log('No faces')) 
 	}
 
@@ -97,14 +129,14 @@ class App extends Component{
 	}
 
 	displayFaceBox = (boxes) => {
-		console.log(boxes);
+		//console.log(boxes);
 		this.setState({ boxes: boxes }); 
 		//return <div style={{backgroundColor: "red", width:100+"px", height:50+"px", position:"absolute"}}></div>
 	}
 
 	render(){		
 		console.log(this.state); 
-		const { imgUrl, boxes, route, isSignedIn } = this.state; 
+		const { imgUrl, boxes, route, isSignedIn, user } = this.state; 
 		return (
 			<Fragment>
             	<Particles params={particleOptions} className='particles'/>
@@ -113,15 +145,15 @@ class App extends Component{
 					(route === 'home') ? 
 						(
 							<Fragment>
-								<Rank name={'Špela'} rank={6}/>
-								<ImageLinkForm onButtonSubmit={this.onButtonSubmit} onInputChange={this.onInputChange} />
+								<Rank name={user.name} rank={user.entries}/>
+								<ImageLinkForm onPictureSubmit={this.onPictureSubmit} onInputChange={this.onInputChange} />
 								{ (imgUrl.length !== Number(0)) ? 
 									(<FaceRecognition imgUrl={imgUrl} boxes={boxes}/>) : (console.log('No image'))
 								}
 							</Fragment>
 						) : (
-							(route === 'signin') ? 
-							(<Signin onRouteChange={this.onRouteChange}/>) : (<Register onRouteChange={this.onRouteChange}/>) 
+							(route === 'register') ? 
+							(<Register onRouteChange={this.onRouteChange} loadUser={this.loadUser}/>) : (<Signin onRouteChange={this.onRouteChange} loadUser={this.loadUser}/>)
 						)
 				}
 			</Fragment>

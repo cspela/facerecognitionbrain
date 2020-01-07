@@ -2,7 +2,7 @@ import React from 'react';
 import Logo from '../Logo/Logo'; 
 
 const Navigation = ( { onRouteChange, isSignedIn} ) => {
-	console.log('hohoho', isSignedIn)
+	//console.log('isSignedIn', isSignedIn)
 	if(isSignedIn){
 		return(
 			<nav className='db dt-l w-100 border-box pa3 pt4 ph5-l'>
