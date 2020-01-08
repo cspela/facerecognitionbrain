@@ -40,7 +40,7 @@ class Register extends Component{
 					this.props.loadUser(user); 
 					this.props.onRouteChange('home')
 				}else{
-					this.setState({message: 'This email is already registered'})
+					this.setState({message: 'Unable to join our awesome page...'})
 				}
 			})
 		}else{

@@ -1,10 +1,21 @@
 const express = require('express');
-const app = express(); 
-
 const bcrypt = require('bcrypt-nodejs'); 
 const cors = require('cors'); 
-
 const database = require('./database.js');
+const knex = require('knex');
+
+const db = knex({
+  client: 'pg',
+  connection: {
+    host : '127.0.0.1',
+    user : '',
+    password : '',
+    database : 'smartbrain'
+  }
+});
+
+const app = express(); 
+
 const { users } = database; 
 
 app.use(express.urlencoded({extended: false}));
@@ -12,122 +23,119 @@ app.use(express.json());
 app.use(cors()); 
 
 app.get('/', (req,res) => {
-	res.send(users); 
+	res.send(`It's working...`); 
 })
 
 app.get('/users', (req,res) => {
-	res.send(users); 
+	db.select('*')
+		.from('users')
+		.then(users => {
+			res.send(users); 
+		}).catch(err => {
+			res.status(400).json(`Can't get users`); 
+		})
 })
 
 app.get('/profile/:id', (req,res) => {	
-	let found = 'false'; 
-	users.forEach(user => {
-		const { name, entries } = user; 
-		if(user.id === Number(req.params.id)){
-			found = 'true'; 
-			return res.json(user); 
-		}
-	})
-	if(!found){
-		res.status(404).json('Not found'); 
-	}
+	const { id } = req.params;
+	db.select('*')
+		.from('users')
+		.where('id', id)
+		.then(user => {
+			if(!user[0]){
+				res.status(400).json(`Can't get user`); 
+			}
+			res.json(user[0]);
+		}).catch(err => {
+			res.status(400).json(`Can't get user`); 
+		})
 })
 
+//INSERT INTO LOGIN!!!!!
 app.post('/register', (req,res) => {
 	let exists = false; 
-	const { id, name, email, password } = req.body; 
-	users.map(user => {
-		if(user.email === email){
-			exists = true; 
-		}
-		return exists; 
+	const { name, email, password } = req.body; 
+	db('users')
+      .returning('*')
+	  .insert({
+		name: name, 
+		email: email, 
+		joined: new Date()
+	}).then(user => {
+		res.json(user[0]); 
+	}).catch(err => {
+		res.status(400).json(`Unable to register`); 
 	})
-	console.log(exists); 	
-	if(!exists){
-		const user = {
-			id: Math.floor(Math.random() * 100),
-			name: name,
-			email: email,
-			password: password,
-			entries: 0,
-			joined: new Date()
-		}
-		users.push(user);
-		res.json(user);
-	} else{
-		res.json("exists");
-	}
-
 })
 
 app.post('/signin', (req,res) => {
-	let canSignin = false; 
 	const { email, password } = req.body; 
-	users.map(user => {
-		if(user.email === email && user.password === password){
-			canSignin = true;
-			return res.json(user); 
-		}
-		return canSignin; 
-	})
-	if(!canSignin){
-		res.status(400).json('fail');
-	}
+	db.select('*').from('login')
+		.where({email: email, hash: password})
+		.then(user => {
+			if(!user[0]){
+				res.status(400).json(`Can't sign in`); 
+			}
+			db.select('*')
+				.from('users')
+				.where('email', email)
+				.then(user => {
+					res.json(user[0]);
+				}) 
+		}).catch(err => {
+			res.status(400).json(`Can't sign in`); 
+		})
+})
 
-	// if(!canSignin){
-	// 	res.json('success'); 
-	// }else{
-	// 	res.status(400).json('fail'); 
-	// }
+app.put('/image', (req, res) => {
+	const { id } = req.body; 
+	db('users')
+		.where('id', id)
+		.increment({'entries': 1})
+		.returning('entries')
+		.then(entries => {
+			res.json(entries); 
+		}).catch(err => {
+			res.status(400).json(`Can't update entries`)
+		})
 })
 
 app.delete('/user/:id', (req,res) => {
-	users.forEach((user, i) => {
-		//console.log(user, i); 
-		if(user.id === Number(req.params.id)){
-			users.splice(i, 1);
-		}
-	})
-	res.send("User has been successfuly deleted."); 
+	const { id } = req.params; 
+	db('users')
+		.where('id', id)
+		.del()
+		.then(response => {
+			if(response === 1){
+				res.json((`User deleted.`)); 
+			}else{
+				res.status(400).json(`Can't delete user`);
+			}
+		}).catch(err => {
+			res.status(400).json(`Error`);
+		})
 })
 
 app.put('/userData/:id', (req,res) => {
 	const { name, email, password } = req.body;
 	const { id } = req.params; 
-	users.forEach((user, i) => {
-		if(user.id === Number(id)){
-			user.name = name; 
-			user.email = email; 
-			user.password = password; 
-		}
-	})
-	res.send("User has been updated."); 
+	db('users')
+		.where('id', id)
+		.update({
+			name: name,
+			email: email,
+		})
+		.then(response => {
+			if(response === 1){
+				res.json((`User updated.`)); 
+			}else{
+				res.status(400).json(`User doesn't exists`);
+			}
+		})
+		.catch(err => {
+			res.status(400).json(`Can't update user.`);
+		})
 })
-
-app.put('/image', (req, res) => {
-	let found = 'false'; 
-	users.forEach(user => {
-		const { id } = req.body; 
-		if(user.id === Number(id)){
-			found = 'true'; 
-			user.entries++; 
-			return res.json(user.entries); 
-		}
-	})
-	if(!found){
-		res.status(400).json('User not found'); 
-	}
-})
-
-// app.put('/entries/:userId', (req, res) => {
-// 	const { userId } = req.params; 
-// 	for(user of users){
-// 		if(user.id === Number(userId)){
-// 			user.entries += 1; 
-// 			res.send(user);
-// 		}
-// 	}
-// })
 
 const port = 3003; 
 app.listen(port, () => {
