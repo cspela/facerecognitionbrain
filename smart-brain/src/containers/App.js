@@ -27,7 +27,7 @@ const app = new Clarifai.App({
  apiKey: '01131eb18c31484aaf6f23880c675c1a'
 });
 
-let initialState = {
+const initialState = {
 	input: '', 
 	imgUrl: '',
 	boxes: [],
@@ -92,10 +92,12 @@ class App extends Component{
 						method: 'put',
 						headers: {'Content-Type': 'application/json'},
 						body: JSON.stringify({ id: this.state.user.id })
-					}).then(res => res.json())
+					})
+						.then(res => res.json())
 						.then(count => {
 							this.setState(Object.assign(this.state.user, {entries: count}))
 						})
+						.catch(console.log); 
 				}
 				this.displayFaceBox(this.calculateFaceLocation(response))
 			})
@@ -135,7 +137,7 @@ class App extends Component{
 	}
 
 	render(){		
-		console.log(this.state); 
+		//console.log(this.state); 
 		const { imgUrl, boxes, route, isSignedIn, user } = this.state; 
 		return (
 			<Fragment>
